@@ -29,10 +29,10 @@ jobs:
 
       - name: Генериране на XML
         env:
-          SHOPIFY_STORE: ${{ secrets.SHOPIFY_STORE }}
-          SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
-          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
-          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+          SHOPIFY_STORE: ${{ secrets.SHOPIFY_STORE || vars.SHOPIFY_STORE }}
+          SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN || vars.SHOPIFY_ACCESS_TOKEN }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID || vars.SHOPIFY_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET || vars.SHOPIFY_CLIENT_SECRET }}
           # ---- Настройки (сменете стойностите в кавичките при нужда) ----
           DELIVERY_TIME: ""           # срок за доставка в дни (празно = не се посочва)
           DELIVERY_COST: "Free"       # безплатна доставка
@@ -40,7 +40,12 @@ jobs:
           PRODUCT_NUMBER: "auto"      # кодът на производителя се търси сам
           VAT_RATE: "20"
           UTM: "utm_source=pazaruvaj&utm_medium=cpc"
-        run: python pazaruvaj_feed.py
+        run: |
+          echo "Проверка на ключовете (стойностите не се показват):"
+          for k in SHOPIFY_STORE SHOPIFY_ACCESS_TOKEN SHOPIFY_CLIENT_ID SHOPIFY_CLIENT_SECRET; do
+            if [ -n "${!k}" ]; then echo "  $k - има"; else echo "  $k - НЯМА"; fi
+          done
+          python pazaruvaj_feed.py
 
       - uses: actions/configure-pages@v5
 
@@ -50,3 +55,4 @@ jobs:
 
       - id: deploy
         uses: actions/deploy-pages@v4
+
