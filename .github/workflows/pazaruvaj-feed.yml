@@ -1,0 +1,52 @@
+name: Pazaruvaj XML feed
+
+on:
+  schedule:
+    - cron: "20 * * * *"   # всеки час, в хх:20 (след синхронизацията с дистрибутора)
+  workflow_dispatch:        # бутон "Run workflow" за ръчно пускане
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pazaruvaj-feed
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}pazaruvaj.xml
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Генериране на XML
+        env:
+          SHOPIFY_STORE: ${{ secrets.SHOPIFY_STORE }}
+          SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+          # ---- Настройки (сменете стойностите в кавичките при нужда) ----
+          DELIVERY_TIME: ""           # срок за доставка в дни (празно = не се посочва)
+          DELIVERY_COST: "Free"       # безплатна доставка
+          ONLY_IN_STOCK: "1"          # 1 = само продукти с наличност
+          PRODUCT_NUMBER: "auto"      # кодът на производителя се търси сам
+          VAT_RATE: "20"
+          UTM: "utm_source=pazaruvaj&utm_medium=cpc"
+        run: python pazaruvaj_feed.py
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
